@@ -1,6 +1,14 @@
 import { getToken } from "./tokenStore";
 
-export const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+declare global {
+  interface Window {
+    __ENV__?: { VITE_API_BASE_URL?: string };
+  }
+}
+
+// 컨테이너 런타임에 docker-entrypoint.sh가 생성하는 env-config.js(window.__ENV__)를 우선 읽고,
+// 없으면(로컬 vite dev) 빌드타임 import.meta.env로 fallback한다.
+export const BASE_URL = window.__ENV__?.VITE_API_BASE_URL ?? import.meta.env.VITE_API_BASE_URL ?? "";
 
 interface ApiEnvelope<T> {
   status: string;
