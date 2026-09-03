@@ -22,10 +22,10 @@
 ## 3. 시스템 아키텍처
 
 ```
-groovy-frontend (React SPA, 정적 파일)
+groovy-frontend (React SPA, S3+CloudFront 정적 배포, www.groovy-team26.com)
         │  fetch (VITE_API_BASE_URL, credentials: "include")
         ▼
-api-gateway :8080
+Istio ingress gateway (api.groovy-team26.com)
         │
         ├─▶ identity-service   (/api/auth, /api/users/me, /api/tags)
         ├─▶ study-service      (/api/studies, /api/users/me/studies, /applications)
@@ -35,7 +35,7 @@ api-gateway :8080
 ```
 
 이 레포는 **DB를 갖지 않는 순수 클라이언트**입니다. 백엔드 서비스가 어떻게 나뉘어 있는지는
-전혀 알 필요가 없고, api-gateway 주소 하나만 바라봅니다.
+전혀 알 필요가 없고, api 도메인 하나만 바라봅니다.
 
 ## 4. 기술 스택
 
@@ -78,13 +78,11 @@ npm run build
 npm run preview
 ```
 
-```bash
-# Docker 이미지로 빌드 (VITE_API_BASE_URL은 vite 특성상 빌드타임 ARG로 주입)
-docker build -t groovy-frontend --build-arg VITE_API_BASE_URL=http://localhost:8080 .
-docker run -p 5173:5173 groovy-frontend
-```
 
-> 백엔드 API가 준비되지 않은 동안은 각 `src/api/*` 호출이 실패하지만 화면 자체는 뜹니다.
-> api-gateway를 포함한 전체 백엔드까지 함께 확인하려면 원본 `Groovy` 레포의
-> `docker-compose.local.yml`을 사용하는 것을 권장합니다. `VITE_API_BASE_URL`은 빌드타임에
-> 번들에 박히므로, API 주소가 바뀌면 이미지를 다시 빌드해야 합니다.
+## 7. 배포
+
+`main`에 push되면 `.github/workflows/build-and-deploy.yml`이 빌드 후 S3(`groovy-prod-frontend-*`)에
+업로드하고 CloudFront 캐시를 무효화합니다. 컨테이너 이미지를 만들어 배포하던 방식(Dockerfile,
+docker-entrypoint.sh)은 S3+CloudFront 정적 배포로 전환하면서 제거했습니다 — 환경별로 같은
+이미지를 재사용할 필요가 없어져서, 런타임 환경변수 주입(`env-config.js`) 없이 빌드타임에
+`VITE_API_BASE_URL`을 고정합니다.
