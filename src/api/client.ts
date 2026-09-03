@@ -1,14 +1,9 @@
 import { getToken } from "./tokenStore";
 
-declare global {
-  interface Window {
-    __ENV__?: { VITE_API_BASE_URL?: string };
-  }
-}
-
-// 컨테이너 런타임에 docker-entrypoint.sh가 생성하는 env-config.js(window.__ENV__)를 우선 읽고,
-// 없으면(로컬 vite dev) 빌드타임 import.meta.env로 fallback한다.
-export const BASE_URL = window.__ENV__?.VITE_API_BASE_URL ?? import.meta.env.VITE_API_BASE_URL ?? "";
+// S3+CloudFront 정적 배포로 전환하면서 컨테이너 런타임 주입(env-config.js/window.__ENV__)
+// 방식은 더 이상 쓰지 않는다 — 환경별로 이미지를 재사용할 필요가 없어졌으므로, Vite 표준
+// 방식대로 빌드타임에 .env.production 값이 번들에 그대로 박힌다.
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
 interface ApiEnvelope<T> {
   status: string;
